@@ -41,9 +41,6 @@ class Member(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'username'
 
-    def __str__(self):
-        return self.username
-
 
 '''Group: the base NA group.'''
 class NAGroup(models.Model):
