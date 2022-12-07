@@ -1,48 +1,66 @@
+import datetime
+
 from django.contrib.auth.models import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
-from phonenumber_field.modelfields import PhoneNumberField
-import datetime
 from localflavor.us.models import USStateField, USZipCodeField
+from phonenumber_field.modelfields import PhoneNumberField
+
+from .managers import MemberManager
 
 
 '''
     Member: Class representing NA members.
     Also used as the Django Auth user class.
 '''
+
+
 class Member(AbstractBaseUser, PermissionsMixin):
-    # id
-    # password
-    # last_login
-    # is_superuser
-    # username(Special, Unique
-    # Constraint)
-    # first_name
-    # last_name
-    # email(Special)
-    # is_staff
-    # is_active
-    # date_joined
-    username = models.CharField(primary_key=True,
-                                max_length=256)
-    password = models.CharField(max_length=256)
-    first_name = models.CharField(max_length=128)
-    last_name = models.CharField(max_length=256,
+    id = models.BigAutoField(auto_created=True,
+                             primary_key=True,
+                             serialize=False,
+                             verbose_name='ID')
+    # Mandatory Fields
+    username = models.CharField(unique=True,
+                                blank=False,
+                                max_length=254)
+    password = models.CharField(max_length=254)
+
+    #
+    email = models.EmailField(unique=True,
+                              blank=True,
+                              null=True,
+                              default=None)
+    first_name = models.CharField(max_length=127,
+                                  blank=True,
+                                  null=True,
+                                  default=None)
+    last_name = models.CharField(max_length=254,
                                  blank=True,
+                                 null=True,
                                  default=None)
-    email = models.EmailField(unique=True)
-    mobile_number = PhoneNumberField(unique=True)
+    mobile_number = PhoneNumberField(unique=True,
+                                     blank=True,
+                                     null=True,
+                                     default=None)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_specialworker = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
-    date_joined = models.DateField(auto_created=True)
-    last_login = models.DateField()
+    date_joined = models.DateTimeField(default=datetime.datetime.now,
+                                       verbose_name='date joined')
+    last_login = models.DateTimeField(blank=True,
+                                      null=True,
+                                      verbose_name='last login')
 
     USERNAME_FIELD = 'username'
 
+    objects = MemberManager()
+
 
 '''Group: the base NA group.'''
+
+
 class NAGroup(models.Model):
     name = models.CharField(max_length=256,
                             primary_key=True)
@@ -61,13 +79,15 @@ class NAGroup(models.Model):
                                   null=True,
                                   blank=True)
     service_rep = models.ForeignKey(Member,
-                            models.SET_NULL,
-                            related_name='ser_user',
-                            null=True,
-                            blank=True)
+                                    models.SET_NULL,
+                                    related_name='ser_user',
+                                    null=True,
+                                    blank=True)
 
 
 '''Codes: NA Recovery Meeting Codes.'''
+
+
 class Codes(models.Model):
     code = models.CharField(max_length=5)
     name = models.CharField(max_length=64)
@@ -75,6 +95,8 @@ class Codes(models.Model):
 
 
 '''Address: US Based Meeting Site Address'''
+
+
 class Address(models.Model):
     street = models.CharField(max_length=256)
     specific = models.CharField(max_length=256)
@@ -92,6 +114,8 @@ class Address(models.Model):
 
 
 '''NB: A meeting is defined by single weekly or greater recurrence.'''
+
+
 class MeetingTime(models.Model):
     MON = 0
     TUE = 1
@@ -119,6 +143,7 @@ class MeetingTime(models.Model):
                              null=True,
                              blank=True)
 
+
 class Meeting(models.Model):
     # The group name is usually the meeting name. If this group has multiple meetings with different names,
     # use the name field.
@@ -129,7 +154,6 @@ class Meeting(models.Model):
                              on_delete=models.CASCADE,
                              blank=False)
     addr = models.ForeignKey('Address',
-                                 on_delete=models.PROTECT,
-                                 blank=False)
+                             on_delete=models.PROTECT,
+                             blank=False)
     codes = models.ManyToManyField(Codes)
-
